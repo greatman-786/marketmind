@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---- Auth.js (NextAuth v5) models ----
+// https://authjs.dev/getting-started/adapters/prisma
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String       @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime     @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  generations   Generation[]
+  research      Research[]
+  campaigns     Campaign[]
+  sequences     EmailSequence[]
+  analyses      Analysis[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---- App models ----
+//
+// One Generation row per user request. We store all 3 variations as a JSON
+// array so the user can compare them side-by-side and copy/favorite individually.
+// Per-variation favoriting is tracked in `favoriteIndex` (-1 = none, 0/1/2 = which one).
+
+model Generation {
+  id            String   @id @default(cuid())
+  userId        String
+  contentType   String   // "blog" | "linkedin" | "twitter" | "instagram" | "email" | "ad"
+  tone          String   // "professional" | "witty" | "casual" | "persuasive" | "storytelling"
+  topic         String
+  keywords      String   // comma-separated for simplicity in SQLite
+  audience      String?
+  variations    String   // JSON array of 3 strings
+  favoriteIndex Int      @default(-1)
+  modelUsed     String   // e.g. "claude-sonnet-4-6"
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  cacheReadTokens Int    @default(0)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, contentType])
+}
+
+// Audience & Competitor Research Agent (Feature 2).
+// One row per research request. Stores the raw structured brief as JSON, plus
+// the actual web search queries Claude ran (useful for the UI replay AND for
+// debugging "is this brief grounded in real searches or hallucinated?").
+
+model Research {
+  id              String   @id @default(cuid())
+  userId          String
+  brand           String
+  niche           String
+  audience        String?
+  brief           String   // JSON-serialized brief (see lib/prompts.ts RESEARCH_SCHEMA)
+  searchQueries   String   // JSON array of strings — queries Claude actually ran
+  modelUsed       String
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  cacheReadTokens Int      @default(0)
+  webSearchCount  Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// Campaign Planner (Feature 3).
+// Stores the structured plan as JSON. sourceResearchId is intentionally a
+// plain string column (not a Prisma relation) — deleting a research record
+// shouldn't cascade-delete a campaign that referenced it months ago.
+
+model Campaign {
+  id               String   @id @default(cuid())
+  userId           String
+  brand            String
+  goal             String   // awareness | lead_generation | launch | retention | sales
+  durationWeeks    Int
+  budgetTier       String   // scrappy | starter | growth | enterprise
+  audience         String?
+  sourceResearchId String?
+  plan             String   // JSON-serialized plan
+  modelUsed        String
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// Email Sequence Builder (Feature 4).
+// Stores the full multi-email sequence as JSON. sourceResearchId is the same
+// loose-coupling pattern as Campaign — a plain string, not a Prisma relation.
+
+model EmailSequence {
+  id               String   @id @default(cuid())
+  userId           String
+  name             String
+  product          String
+  audience         String
+  goal             String
+  type             String   // cold_outreach | nurture
+  emailCount       Int
+  sourceResearchId String?
+  sequence         String   // JSON-serialized sequence (see EMAIL_SEQUENCE_SCHEMA)
+  modelUsed        String
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// Performance Analyzer (Feature 5).
+// Stores the user's pasted metrics verbatim alongside Claude's analysis. The
+// rawMetrics column is the audit trail — re-running an analysis a month later
+// against the original paste is useful for comparing model improvements.
+
+model Analysis {
+  id               String   @id @default(cuid())
+  userId           String
+  title            String
+  rawMetrics       String   // unparsed pasted text
+  contextNote      String?
+  sourceCampaignId String?  // optional plain-string FK to Campaign — same loose-coupling pattern as elsewhere
+  analysis         String   // JSON-serialized analysis (see ANALYSIS_SCHEMA)
+  modelUsed        String
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}

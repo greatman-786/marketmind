@@ -1,0 +1,30 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# env
+.env
+.env*.local
+!.env.example
+
+# database
+*.db
+*.db-journal
+prisma/dev.db
+prisma/migrations/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# misc
+.DS_Store
+.vscode/
+.idea/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
