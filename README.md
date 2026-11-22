@@ -1,154 +1,77 @@
-🧠 MarketMind
+# 🧠 MarketMind
 
-An AI-powered marketing intelligence platform that helps businesses create 
-data-driven marketing strategies, analyse competitors, and generate compelling 
-marketing content — built and deployed on Vercel.
+Marketing copy generation with a memory — blog intros, LinkedIn posts, Twitter threads, email sequences and ad copy, three angles per request, with every generation saved and searchable.
 
-🌐 **Live Demo:** https://marketmind-gray.vercel.app
+🌐 **Demo:** https://marketmind-gray.vercel.app
 
 ---
 
-## 🚀 Features
+## What it does
 
-- 🧠 **AI-generated marketing strategies** tailored to your business
-- 🔍 **Competitor analysis** powered by AI insights
-- ✍️ **Marketing copy generation** for any channel
-- 📊 **Campaign planning** with actionable recommendations
-- 🎯 **Target audience identification** and segmentation
-- 📱 **Fully responsive** — works on desktop and mobile
+- **Three drafts per request** — direct, story-led and curiosity-driven, so you pick rather than regenerate
+- **Tone presets** that actually produce different output
+- **Searchable history** — every generation saved, filterable by type, favourite the ones worth keeping
+- **Export** to CSV or Markdown
+- **Accounts** — OAuth and magic-link sign-in, each user's history isolated from everyone else's
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Built with
 
 | Tool | Purpose |
-|------|---------|
-| Next.js / React | Frontend framework |
-| Vercel | Deployment and hosting |
-| Anthropic Claude / Gemini | AI strategy and content generation |
-| Tailwind CSS | Styling and UI |
+|---|---|
+| Next.js / TypeScript | Application |
+| Prisma | Database layer — SQLite locally, Postgres in production |
+| Tailwind CSS | Styling |
+| Anthropic Claude | Generation |
+| Vercel | Hosting |
 
 ---
 
-## 🔄 How It Works
-User Enters Business Details
+## ⚙️ Running it locally
 
-↓
-
-AI Analyses Market & Competitors
-
-↓
-
-Target Audience Identified
-
-↓
-
-Marketing Strategy Generated
-
-↓
-
-Actionable Campaign Plan Delivered
-
----
-
-## ⚙️ Setup & Installation
-
-1. Clone the repository
 ```bash
 git clone https://github.com/greatman-786/marketmind.git
 cd marketmind
-```
-
-2. Install dependencies
-```bash
 npm install
+cp .env.example .env
 ```
 
-3. Add environment variables
-```bash
-ANTHROPIC_API_KEY=your_api_key_here
-```
+Fill in the values in `.env` — the file lists what's needed, including your Anthropic API key and a database URL.
 
-4. Run locally
 ```bash
+npx prisma migrate dev
 npm run dev
 ```
 
-5. Open `http://localhost:3000`
+Then open `http://localhost:3000`.
 
 ---
 
-## 📁 Project Structure
+## 📁 Structure
+
+```
 marketmind/
-
-│
-
-├── pages/          # Next.js pages
-
-├── components/     # Reusable UI components
-
-├── styles/         # Tailwind CSS styles
-
-├── lib/            # AI integration logic
-
-└── README.md       # Project documentation
+├── prisma/           # database schema and migrations
+├── src/              # application code
+├── .env.example      # copy this to .env
+├── next.config.ts
+├── tailwind.config.ts
+└── package.json
+```
 
 ---
 
-## 🧠 AI Integration
+## ⚡ Problems I hit, and what I did
 
-The AI layer powers the entire marketing intelligence engine:
-- **Analyses business details** and identifies market opportunities
-- **Generates complete marketing strategies** with clear action steps
-- **Writes marketing copy** for social media, email and ads
-- **Identifies target audiences** and suggests positioning
-- **Provides competitor insights** to find gaps in the market
-- Works with both **Anthropic Claude** and **Google Gemini**
+**1. Ran out of Anthropic credits mid-testing.** Generation stopped dead. Switched to Gemini's free tier as a drop-in and moved the key into Vercel's environment variables rather than leaving it in the code.
 
----
+**2. The first outputs were generic.** Advice that could apply to any business is advice that helps none of them. Reworked the prompting to ask for industry, budget and target location before generating anything, which is what made the output usable.
 
-## ⚡ Challenges & How I Solved Them
+**3. Output came back as a wall of text.** Hard to read, harder to act on. Built a structured UI that breaks the result into sections rather than handing the user a paragraph to untangle.
 
-### 1. 🔑 API Credit Exhaustion
-**Problem:** The Anthropic API key ran out of credits during testing, 
-completely blocking all AI marketing strategy generation.  
-**Solution:** Switched to **Google Gemini** (free tier) as a drop-in 
-replacement and configured the API key properly in **Vercel environment 
-variables** for secure management across environments.
-
-### 2. 🎯 Generating Actionable vs Generic Strategies
-**Problem:** Early AI outputs produced very generic marketing advice that 
-wasn't specific enough to be useful for real businesses.  
-**Solution:** Heavily refined the prompt engineering — instructing the AI to 
-ask for **specific industry, budget, and target location** before generating 
-strategies, producing much more relevant and actionable recommendations.
-
-### 3. 📊 Structuring Complex Marketing Output
-**Problem:** AI-generated marketing strategies were returned as large blocks 
-of unstructured text — hard to read and difficult to act on.  
-**Solution:** Built a **structured output UI** that organises strategy into 
-clear sections — target audience, key messages, channel recommendations, 
-and campaign ideas — making it immediately actionable for business owners.
-
-### 4. 🚀 Vercel Deployment Issues
-**Problem:** Long AI requests for detailed marketing strategies exceeded 
-Vercel's serverless function timeout limits during deployment.  
-**Solution:** Implemented **streaming responses** so strategy content 
-appears progressively as it is generated — keeping users engaged and 
-staying within serverless time limits.
+**4. Vercel's serverless timeout.** Long generations exceeded the function limit. Switched to streaming, so content appears as it's produced and the request doesn't die waiting.
 
 ---
 
-## 💡 Use Cases
-
-- Startups building their first marketing strategy
-- Small businesses competing against larger brands
-- Marketing agencies generating strategies for clients
-- Entrepreneurs launching new products or services
-
----
-
-## 🙋‍♂️ Author
-
-**Asad** — Software Engineer  
-Building AI-powered web applications for real-world use cases
+**Asad Ullah** — AI automation and QA engineer. [Portfolio](https://asad-portfolio-drab.vercel.app) · [GitHub](https://github.com/greatman-786)
